@@ -1,55 +1,65 @@
-# 余生 · WeddingAlbum3D v2
+# 余生 · WeddingAlbum3D
 
-HTML / CSS / JavaScript + Three.js 的全屏精装婚纱照片书。双页比例针对 1920×1080 画幅设计，镜头自动适配，去掉外围标题、页脚和展示区；控制栏悬浮并自动淡出。橄榄绿布面封套、象牙纸、双面细分网格、弯曲纸页、纸堆厚度、动态阴影。网页和 MP4 使用同一个渲染器与时间函数。
+全屏 3D 婚纱照片书，双页画幅适配 1920×1080。封面初始合上，约 2 秒后自动打开。网页与命令行视频使用同一个确定性渲染器。无需付费服务。
 
-## Windows 本地运行
-安装 Node.js 22+、Google Chrome 或 Edge，以及 PATH 中的 FFmpeg：
+## Windows 启动
+需要 Node.js 22+。运行：
 ~~~powershell
-winget install Gyan.FFmpeg
 npm install
 npm run dev
 ~~~
-打开 http://127.0.0.1:5173 。安装后无需远程字体、照片或付费 API。Chrome 不在默认位置时设置 CHROME_PATH；FFmpeg 可用 FFMPEG_PATH 指定。其他系统先运行 npx playwright install chromium。
+打开 http://127.0.0.1:5173 。控制栏支持暂停/继续、前后翻页、进度拖动；键盘方向键翻页、空格暂停，手机左右滑动翻页。每次加载完成后，先展示合上的封面两秒，再打开；翻页 1.8 秒。
 
-## 定制和保存
-点击右上角“定制相册”，填写姓名、日期、标题、文案。选择最多三张 JPG/PNG/WebP，按选择顺序替换封面和两组内页照片；不足三张时其余保留。图片自动缩放至最长边 3200 像素，居中裁切以适配纸页。当前固定四张双面纸页，三张照片在不同版式中复用。
-
-点击“应用修改”查看效果。点击“保存项目”下载 JSON，包含内嵌照片、文字、音乐和停留时间；下次通过“导入项目”恢复。刷新页面恢复示例，因此离开前请保存。也可以直接修改 js/config.js 的默认内容和 assets/photos 中的本地图片。
-
-选择本地音频文件配置背景音乐，点击“♫ 音乐”开始播放。浏览器需要用户手势才能播放声音。暂停相册会暂停音乐，继续翻页后可再次点击音乐播放；视频从音频开头循环，结尾淡出。请选择有使用权的音乐。项目文件可能较大，网页导出请求上限 80MB。
-
-控制：播放/暂停、左右按钮、方向键、空格、进度条、左右滑动。手动翻页暂停自动播放，点击继续后从当前位置恢复。播放到最后自动停止。
-
-## MP4 导出
-推荐在 npm run dev 启动的本地网页中点击“导出影片”，完成后自动下载，文件也保留在 renders。导出使用独立隐藏 Chromium，将时间精确设置为 n/30 后渲染每一帧，再送入 FFmpeg H.264 编码；不使用 MediaRecorder 或实时屏幕录制。即使电脑渲染慢，也不会遗漏帧。
-
-命令行（无需先启动网页）：
-~~~powershell
-npm run render
-npm run render -- --project C:\Users\yourname\Downloads\wedding-project.json
-npm run render -- --project wedding-project.json --output renders\our-wedding.mp4
-npm run render:test
+## 以后只维护这个照片文件夹
+~~~text
+assets/photos/
+  001.jpg
+  002.jpg
+  003.jpg
+  ...
 ~~~
-默认完整影片约 24.7 秒，1920×1080、30 FPS、H.264/yuv420p，可选 AAC 音轨；每页停留时间可调，翻页固定 1.8 秒。render:test 输出前 6 秒，包括完整封面打开。软件 WebGL 下逐帧渲染可能耗时数分钟至更久；终端每 60 帧显示一次进度。失败时查看终端或网页状态，不会将未完成文件作为成功下载。
+直接添加、删除或替换该文件夹中的图片，然后刷新网页。不需要改 JS，也不需要固定数量或固定文件名。支持 JPG、JPEG、PNG、WebP、AVIF（含大写扩展名）；只读取当前文件夹，不递归读取子目录。按文件名自然排序，例如 2.jpg 在 10.jpg 前，推荐使用 001、002 编号。
 
-网页编辑内容与命令行内容一致的前提：先保存项目，再通过 --project 指定该文件。未指定时导出仓库默认配置。
+第一张同时用于封面，所有照片在内页各出现一次。第一页左侧是纪念文案，后续自动排成双页；照片数量为偶数时末页以结束文案补齐。不额外重复照片凑页数。文件夹至少保留一张图片；空文件夹会提示添加照片。
 
-## 构建与检查
+网页页码和视频进度显示例如“第 2 / 4 跨页 · 照片 2–3 / 7 张”。翻页完成后更新到新跨页；进度条连续变化。封面时显示“封面 · 0 / 7 张”。
+
+请使用清晰原图，建议长边至少 2400px。纸页纹理为 2000×2240，网页上传保留照片最长边至 3200px。照片采用居中裁切，保证比例不被拉伸。默认示例图只有约1200px，正式使用时请换成你自己的高清婚纱照。
+
+开发模式刷新会重新扫描文件夹；静态部署更新照片后需要重新 npm run build 并替换 dist。支持任意数量，没有三张限制；实际可用数量取决于本机内存。纹理仅缓存邻近纸页，离开后释放，避免每张照片常驻高分辨率 GPU 纹理。
+
+## 文案、照片编辑和音乐
+右上角“定制相册”中设置新人姓名、日期、标题、文案和每跨页停留秒数。可连续追加照片，也可点击缩略图下的删除按钮；应用后生效。网页编辑不会写入磁盘照片文件夹；长期修改照片顺序或数量，建议直接维护 assets/photos。
+
+点击“保存项目”下载 JSON，下一次通过“导入项目”恢复；刷新默认重新读取文件夹。通过网页上传的照片会内嵌在 JSON 中，文件夹照片保留文件引用，因此请连同原文件保留。
+
+背景音乐在编辑器选择本地音频文件，点击“♫ 音乐”播放；浏览器需要用户点击才能播放。也可在 js/config.js 的 music 设置 assets/music/your-song.mp3。视频会循环配乐、末尾淡出。音乐和照片请使用有授权的素材。
+
+## 只在终端导出 MP4
+网页没有导出按钮。Windows 需安装 Chrome 或 Edge，以及 PATH 中的 FFmpeg：
+~~~powershell
+winget install Gyan.FFmpeg
+npm run render
+~~~
+不需要先启动网页。默认自动读取 assets/photos 和 js/config.js 的文案、音乐。输出 renders/wedding-album.mp4，1920×1080、30FPS、H.264/yuv420p，可选 AAC 音轨。
+
+网页编辑后的内容需要先保存项目，再运行：
+~~~powershell
+npm run render -- --project C:\Users\yourname\Downloads\wedding-project.json --output renders\our-wedding.mp4
+~~~
+完整影片只显示相册、动态页码及进度条；不显示定制按钮、暂停继续、音乐按钮、状态文案和网页控制栏。可打开 http://127.0.0.1:5173/?render=1 检查视频画面（此模式默认暂停，供时间寻址）。
+
+影片时长自动计算：2秒封面停留 + 跨页数 ×（1.8秒翻页 + 自定义停留秒数）。跨页数 = ceil((照片数+1)/2)。每一帧设置时间为 n/30 后绘制，再交给 FFmpeg 编码；不是实时屏幕录制，渲染耗时不改变输出帧率。软件 WebGL 可能较慢，终端每60帧报告进度。
+
+Chrome 安装在非默认位置时设置 CHROME_PATH，FFmpeg 可设置 FFMPEG_PATH。其他系统先运行 npx playwright install chromium。渲染期间不要修改源文件或照片文件夹。
+
+## 检查与构建
 ~~~powershell
 npm run build
 npm test
+node scripts/test-dynamic.mjs
 npm run preview
 ~~~
-dist 可静态部署；静态部署支持预览和编辑、项目保存。网页 MP4 按钮需要本机 Vite Node 服务，静态托管时请使用命令行导出。WebGL 为必要条件。
+构建产物在 dist。测试涵盖网页交互、照片添加/删除、文件夹自动扫描、2秒封面打开、动态页码以及影片模式界面。截图与机器检查结果在 renders，说明见 docs/TEST_RESULTS.md。当前按用户要求不执行视频编码验收。
 
-测试脚本检查手动控制、播放/暂停、文案和照片替换、任意顺序时间寻址一致性及手机溢出，视觉截图位于 renders。测试结果见 docs/TEST_RESULTS.md。按最新要求未完成视频导出验收。
-
-## 实现与限制
-- js/album.js：共享 Three.js 渲染器，48×8 网格、双面纹理、确定性弯曲、真实光源和阴影。
-- js/app.js：编辑、项目序列化、播放控制和本地导出请求。
-- scripts/render.mjs：固定时间采样、背压写入 FFmpeg、音乐混音。
-- scripts/render-cli.mjs：独立本地服务生命周期。
-- vite.config.js：本机导出接口、并发限制、同源检查和静态素材打包。
-- 纸页使用解析弯曲模拟而非物理求解；滑动触发翻页，不提供跟手卷角。当前照片数量固定为三张。
-- 不依赖旧版 StPageFlip / GSAP / HyperFrames，也没有账户或付费服务要求。
-- 示例照片来源 Unsplash，来源链接见 assets/photos/SOURCES.md。示例用于演示，请替换为你们自己的婚纱照。
+技术：Three.js 网格弯曲、真实阴影与纸堆厚度；Vite 本地服务与打包；Playwright 固定时间渲染；FFmpeg 编码。纸张为解析弯曲模拟，滑动触发完整翻页，不提供跟手卷角。示例照片来源见 assets/photos/SOURCES.md。

@@ -11,3 +11,8 @@ nav:hover,nav:focus-within,body.controls-visible nav{opacity:1}
 body.controls-visible #status{opacity:1}
 body.film nav,body.film header,body.film #status{display:none!important}
 @media(max-width:650px){nav{margin:0;bottom:12px;padding:10px 5px;opacity:.8}header{top:12px;right:12px}#status{bottom:74px}}
+#counter{min-width:175px;white-space:nowrap}#thumbs{display:grid;grid-template-columns:repeat(4,1fr);max-height:230px;overflow:auto}#thumbs>div{display:flex;flex-direction:column;gap:4px}#thumbs img{width:100%;height:70px}#thumbs button{font-size:10px;padding:5px}
+#film-hud{display:none}
+body.film #film-hud{display:flex;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);width:470px;align-items:center;gap:16px;padding:10px 18px;background:#18251ed9;border:1px solid #cbbb8b44;border-radius:6px;color:#e3d6b4;font:14px 'Microsoft YaHei',sans-serif;z-index:10}
+#film-counter{white-space:nowrap}#film-progress{width:180px;height:4px;flex:1;accent-color:#c5ac74;border:0}#film-progress::-webkit-progress-bar{background:#f5e9cc33;border-radius:3px}#film-progress::-webkit-progress-value{background:#c5ac74;border-radius:3px}
+@media(max-width:650px){#counter{min-width:135px;font-size:8px}nav{gap:0}nav button{padding:6px}}
