@@ -1,0 +1,12 @@
+.album-stage { animation: stage-arrive 1.1s cubic-bezier(.2,.7,.2,1) both; }
+.intro-copy { animation: copy-arrive .9s .1s ease both; }
+.control-panel { animation: copy-arrive .9s .25s ease both; }
+
+@keyframes stage-arrive {
+  from { opacity: 0; transform: translateY(16px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes copy-arrive {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}

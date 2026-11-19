@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.vite/
+.hyperframes/
+.cache/
+*.log
+.DS_Store
+Thumbs.db
+renders/*.mp4
+renders/*.mov
+renders/*.webm
+renders/*.png
+!renders/.gitkeep

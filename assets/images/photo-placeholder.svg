@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" role="img" aria-label="Wedding photo placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8dfd0"/>
+      <stop offset=".55" stop-color="#c9b99e"/>
+      <stop offset="1" stop-color="#8f927d"/>
+    </linearGradient>
+    <linearGradient id="dress" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="1" stop-color="#d8d0c0"/>
+    </linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="28"/></filter>
+  </defs>
+  <rect width="1200" height="1500" fill="url(#bg)"/>
+  <circle cx="890" cy="260" r="180" fill="#f7edda" opacity=".45" filter="url(#blur)"/>
+  <path d="M0 1030 C260 870 390 970 610 890 C830 810 1020 900 1200 760 L1200 1500 L0 1500Z" fill="#8e967f" opacity=".55"/>
+  <path d="M0 1190 C270 1030 500 1160 700 1050 C900 940 1080 1050 1200 980 L1200 1500 L0 1500Z" fill="#6f7b6c" opacity=".55"/>
+  <g opacity=".5" fill="#f6efdf">
+    <circle cx="220" cy="390" r="5"/><circle cx="300" cy="310" r="4"/><circle cx="1020" cy="520" r="5"/>
+    <circle cx="930" cy="410" r="3"/><circle cx="160" cy="650" r="3"/>
+  </g>
+  <g transform="translate(350 470)">
+    <ellipse cx="215" cy="175" rx="78" ry="92" fill="#b88968"/>
+    <path d="M137 165 C135 70 285 65 292 168 C252 118 193 111 137 165Z" fill="#4e4038"/>
+    <path d="M125 280 C78 385 75 620 80 770 L345 770 C355 590 332 380 290 280 C245 330 174 330 125 280Z" fill="url(#dress)"/>
+    <path d="M102 770 C50 880 25 930 0 1010 C160 1050 340 1040 420 1000 C370 900 350 850 345 770Z" fill="#eee6d8"/>
+    <path d="M130 300 C40 360 15 480 55 590 C90 565 110 505 145 430Z" fill="#d8d0c0"/>
+  </g>
+  <g transform="translate(650 500)">
+    <ellipse cx="190" cy="150" rx="72" ry="84" fill="#c48f6c"/>
+    <path d="M118 145 C120 60 250 55 266 140 C225 102 162 105 118 145Z" fill="#403a36"/>
+    <path d="M118 260 C65 330 55 560 70 770 L325 770 C335 560 310 340 260 260 C215 290 160 292 118 260Z" fill="#454b46"/>
+    <path d="M160 270 L190 430 L220 270" fill="#f3eee5"/>
+    <path d="M190 430 L165 780 L225 780Z" fill="#d7c8a8"/>
+  </g>
+  <text x="600" y="1370" text-anchor="middle" fill="#fffaf0" opacity=".9" font-family="Georgia,serif" font-size="34" letter-spacing="7">YOUR PHOTO GOES HERE</text>
+</svg>

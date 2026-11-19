@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#171916">
+  <meta name="description" content="A cinematic 3D wedding photo album.">
+  <title>Wedding Album 3D · Our Story</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/album.css">
+  <link rel="stylesheet" href="/css/animation.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Wedding Album 3D home">
+        <span class="brand-mark">W</span>
+        <span class="brand-copy">
+          <strong>WEDDING ARCHIVE</strong>
+          <small>A BOOK OF OUR DAYS</small>
+        </span>
+      </a>
+      <div class="topbar-note">
+        <span class="topbar-dot"></span>
+        <span>AN ALBUM MADE TO BE REMEMBERED</span>
+      </div>
+      <div class="topbar-edition">VOL. 01 <span>·</span> 2026</div>
+    </header>
+
+    <main class="main-content">
+      <section class="intro-copy">
+        <p class="eyebrow">OUR WEDDING ALBUM</p>
+        <h1>Every page, <em>a little forever.</em></h1>
+        <p class="intro-subtitle">把相遇、相爱与相守，装订成一本可以慢慢翻阅的纪念册。</p>
+      </section>
+
+      <section class="album-stage" aria-label="3D wedding photo album">
+        <div class="stage-glow"></div>
+        <div class="stage-floor"></div>
+        <div class="book-wrap">
+          <div id="book" class="book-container" aria-label="婚纱照片相册"></div>
+        </div>
+        <div class="stage-caption">
+          <span>HANDCRAFTED MEMORIES</span>
+          <span>TURN THE PAGE TO CONTINUE</span>
+        </div>
+      </section>
+
+      <section class="control-panel" aria-label="相册控制">
+        <div class="control-cluster">
+          <button class="icon-button" id="prevBtn" type="button" aria-label="上一页" title="上一页">
+            <span aria-hidden="true">←</span>
+          </button>
+          <button class="play-button" id="playBtn" type="button" aria-label="暂停自动翻页">
+            <span class="play-icon" aria-hidden="true">Ⅱ</span>
+            <span class="play-label">自动播放</span>
+          </button>
+          <button class="icon-button" id="nextBtn" type="button" aria-label="下一页" title="下一页">
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+
+        <div class="progress-cluster">
+          <span class="page-counter" id="pageCounter">COVER</span>
+          <div class="progress-track" aria-hidden="true">
+            <span id="progressFill"></span>
+          </div>
+          <span class="page-total" id="pageTotal">05 SPREADS</span>
+        </div>
+
+        <div class="sound-cluster">
+          <button class="sound-button" id="musicBtn" type="button" disabled title="添加背景音乐后启用">
+            <span aria-hidden="true">♫</span>
+            <span>音乐未设置</span>
+          </button>
+        </div>
+      </section>
+
+      <p class="keyboard-hint">键盘 ← → 翻页 · 空格 暂停 / 继续</p>
+    </main>
+
+    <footer class="footer">
+      <span>DESIGNED WITH LOVE</span>
+      <span>WEDDING ALBUM 3D</span>
+    </footer>
+  </div>
+
+  <audio id="backgroundMusic" preload="none" loop></audio>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
