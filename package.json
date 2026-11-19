@@ -1,23 +1,22 @@
 {
   "name": "wedding-album-3d",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "A 3D wedding photo album with automatic page turning and HyperFrames video export.",
+  "description": "Deterministic 3D fine-art wedding book and offline MP4 renderer",
   "scripts": {
-    "postinstall": "node scripts/copy-gsap.mjs",
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "hf:doctor": "npx hyperframes doctor",
-    "render:draft": "npx hyperframes render --composition export.html --output renders/wedding-album-preview.mp4 --fps 30 --quality draft --workers 1",
-    "render": "npx hyperframes render --composition export.html --output renders/wedding-album-final.mp4 --fps 30 --quality high --workers 2"
+    "render": "node scripts/render-cli.mjs",
+    "render:test": "node scripts/render-cli.mjs --seconds 6 --output renders/test.mp4",
+    "test": "node scripts/test.mjs"
   },
   "dependencies": {
-    "gsap": "^3.13.0",
-    "page-flip": "2.0.7"
+    "three": "^0.187.0"
   },
   "devDependencies": {
+    "playwright": "^1.65.1",
     "vite": "^6.3.5"
   }
 }
