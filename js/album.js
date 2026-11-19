@@ -10,6 +10,14 @@ const escapeHtml = function (value) {
     .replace(/'/g, "&#039;");
 };
 
+const attachImageFallbacks = function (element) {
+  element.querySelectorAll("img").forEach(function (image) {
+    image.addEventListener("error", function () {
+      image.src = ALBUM_CONFIG.placeholderImage;
+    }, { once: true });
+  });
+};
+
 const photoMarkup = function (page, index) {
   const src = page.src || ALBUM_CONFIG.placeholderImage;
   const alt = page.alt || "婚纱照片占位图";
@@ -17,8 +25,7 @@ const photoMarkup = function (page, index) {
   return (
     '<div class="page-paper photo-page' + variant + '">' +
       '<div class="photo-mat">' +
-        '<img src="' + escapeHtml(src) + '" alt="' + escapeHtml(alt) + '" ' +
-          'onerror="this.onerror=null;this.src=\\'' + ALBUM_CONFIG.placeholderImage + '\\';">' +
+        '<img src="' + escapeHtml(src) + '" alt="' + escapeHtml(alt) + '">' +
       '</div>' +
       '<div class="photo-caption">' +
         '<span>' + escapeHtml(page.caption || "A MOMENT TO REMEMBER") + '</span>' +
@@ -60,6 +67,7 @@ const createPage = function (className, content, density) {
   page.className = "album-page " + className;
   if (density) page.dataset.density = density;
   page.innerHTML = content;
+  attachImageFallbacks(page);
   return page;
 };
 
@@ -71,8 +79,7 @@ const createCover = function () {
   cover.innerHTML =
     '<div class="cover-panel">' +
       '<div class="cover-photo">' +
-        '<img src="' + escapeHtml(ALBUM_CONFIG.coverImage) + '" alt="婚纱相册封面" ' +
-          'onerror="this.onerror=null;this.src=\\'' + ALBUM_CONFIG.placeholderImage + '\\';">' +
+        '<img src="' + escapeHtml(ALBUM_CONFIG.coverImage) + '" alt="婚纱相册封面">' +
       '</div>' +
       '<div class="cover-title-block">' +
         '<p class="cover-kicker">THE WEDDING COLLECTION</p>' +
@@ -82,6 +89,7 @@ const createCover = function () {
         '<p class="cover-date">' + escapeHtml(ALBUM_CONFIG.date) + '</p>' +
       '</div>' +
     '</div>';
+  attachImageFallbacks(cover);
   return cover;
 };
 

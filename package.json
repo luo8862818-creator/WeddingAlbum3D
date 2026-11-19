@@ -9,7 +9,6 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "hf:doctor": "npx hyperframes doctor",
-    "hf:check": "npx hyperframes check --at 1,5,10,16,23,30",
     "render:draft": "npx hyperframes render --composition export.html --output renders/wedding-album-preview.mp4 --fps 30 --quality draft --workers 1",
     "render": "npx hyperframes render --composition export.html --output renders/wedding-album-final.mp4 --fps 30 --quality high --workers 2"
   },
