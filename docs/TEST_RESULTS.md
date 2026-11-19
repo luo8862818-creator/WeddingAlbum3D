@@ -20,3 +20,19 @@
 - 默认导出改为2560×1440 / 30FPS，PNG无损帧输入，H.264 slow / CRF16；可用--resolution 1080p切换。
 - scripts/test-quality.mjs检查绘图缓冲区尺寸、纹理尺寸和导入字节保真，结果写入renders/quality-checks.json。
 - 用户新增的真实婚纱照片未修改、未加入本次Git提交。没有执行完整MP4导出。
+
+## 色彩与HyperFrames入口修复
+- 用户日志复现：根目录开发index.html不适合HyperFrames裸读，Three.js模块无法解析，时长0，画幅错误回退到1080×1920。之前的2K参数仅作用于自带本地编码器，不会影响外部HyperFrames命令。
+- 新增scripts/prepare-hyperframes.mjs，生成HyperFrames专用横屏2560×1440入口，含照片动态时长、原生模块依赖、字体、暂停GSAP时间轴与媒体准备Promise。
+- 专用js/hyperframes.js不带网页按钮、RAF或墙钟计时。
+- 照片区域绕过ACES与暖色受光，仍保留最多10%的真实遮挡阴影；书页、纸边和封面继续受光。
+- scripts/test-color.mjs通过：[64,96,128]、[200,120,80]、[240,240,240]的源RGB与渲染采样RGB逐通道完全一致，未发现WebGL shader异常。
+- 用户个人照片、照片删除以及已有.gitignore修改均保留，不纳入实现提交。
+
+HyperFrames实际验证（本机0.9.65）：
+- check通过：ok=true、browserSkipped=false；lint/runtime/layout/contrast均无error，contrast五个采样全部通过。
+- 生成结果识别2560×1440、39.1秒、13张用户照片。
+- snapshot通过并目视检查3.8s、8.2s、38.85s：首个跨页、翻页中间态和末页均正确，没有网页控制按钮。
+- 非阻断提示：进度区建议拆分子composition、18px页码低于通用手机字幕字号建议、满幅canvas碰边、未配置音乐；这些与用户要求的紧凑进度条、满幅相册和自行配置音乐相符。
+- Three.js已替换被移除的PCFSoftShadowMap为PCFShadowMap；检查过程另有一次上下文对象删除警告，但无shader错误、渲染失败或截图缺失。
+- 本次不生成整段MP4，导出由用户执行。

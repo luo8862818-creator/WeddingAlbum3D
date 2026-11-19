@@ -13,3 +13,4 @@ renders/*.webm
 renders/*.png
 !renders/.gitkeep
 renders/*.json
+hyperframes-export/

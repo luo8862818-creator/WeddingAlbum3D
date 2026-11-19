@@ -1,3 +1,5 @@
+import {readdir} from 'node:fs/promises';
+const samplePhoto='assets/photos/'+(await readdir('assets/photos')).filter(n=>/\.(jpe?g|png|webp|avif)$/i.test(n)).sort()[0];
 import {createServer} from 'vite';
 import {browser} from './render.mjs';
 import assert from 'node:assert/strict';
@@ -26,7 +28,7 @@ try{
  }
  await page.screenshot({path:'renders/film-progress-1080.png'});
  results.push('1/2/7张照片动态页数、总数、时长及最终页码正确');
- await copyFile('assets/photos/wedding-01.jpg',temp);
+ await copyFile(samplePhoto,temp);
  await page.waitForTimeout(1000);await page.reload();await page.evaluate(()=>window.ready);assert.equal(await page.evaluate(()=>window.albumAPI.config.photos.length),base.photos.length+1);
  await unlink(temp);await page.waitForTimeout(1000);await page.reload();await page.evaluate(()=>window.ready);assert.equal(await page.evaluate(()=>window.albumAPI.config.photos.length),base.photos.length);
  results.push('文件夹新增、删除后刷新自动同步');

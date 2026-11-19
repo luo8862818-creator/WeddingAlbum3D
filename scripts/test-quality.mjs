@@ -1,3 +1,5 @@
+import {readdir} from 'node:fs/promises';
+const samplePhoto='assets/photos/'+(await readdir('assets/photos')).filter(n=>/\.(jpe?g|png|webp|avif)$/i.test(n)).sort()[0];
 import {createServer} from 'vite';
 import {browser} from './render.mjs';
 import {renderOptions} from './render-options.mjs';
@@ -16,8 +18,8 @@ try{
  await page.screenshot({path:'renders/quality-1440p.png',type:'png'});
  // Upload uses original bytes, never a re-encoded or downscaled canvas.
  await page.evaluate(async()=>{const c=window.albumAPI.config;await window.albumAPI.load({...c,photos:[c.photos[0]]});document.body.classList.remove('film');});
- await page.click('#edit');await page.setInputFiles('#photos','assets/photos/wedding-01.jpg');await page.click('#apply');await page.waitForFunction(()=>!document.getElementById('editor').open);
- const original=await readFile('assets/photos/wedding-01.jpg');
+ await page.click('#edit');await page.setInputFiles('#photos',samplePhoto);await page.click('#apply');await page.waitForFunction(()=>!document.getElementById('editor').open);
+ const original=await readFile(samplePhoto);
  const equal=await page.evaluate(base64=>window.albumAPI.config.photos.at(-1).split(',')[1]===base64,original.toString('base64'));assert(equal);
  const report={resolution:renderOptions(),canvas:quality.canvas,textures:quality.textures,sourceDimensions:quality.sources,originalUploadBytesPreserved:equal};
  await writeFile('renders/quality-checks.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));

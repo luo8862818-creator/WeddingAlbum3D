@@ -35,7 +35,22 @@ assets/photos/
 
 背景音乐在编辑器选择本地音频文件，点击“♫ 音乐”播放；浏览器需要用户点击才能播放。也可在 js/config.js 的 music 设置 assets/music/your-song.mp3。视频会循环配乐、末尾淡出。音乐和照片请使用有授权的素材。
 
-## 只在终端导出 MP4
+## 终端导出 MP4（HyperFrames 推荐入口）
+如果你使用 HyperFrames，请在仓库目录运行以下两条命令；无需 npm run dev，也无需 npm run render：
+~~~powershell
+node scripts/prepare-hyperframes.mjs
+npx hyperframes render hyperframes-export --output renders/final.mp4 --fps 30 --quality delivery --workers 1
+~~~
+第一条扫描当前照片、文案、音乐，生成 hyperframes-export/index.html：横屏2560×1440、真实时长、独立Three.js模块、暂停GSAP时间轴和资源。每次更换照片或文案后重新执行第一条。第二条才执行视频编码。
+
+不要对开发用的根目录index.html直接运行HyperFrames。它含有Vite专用导入和照片扫描逻辑，裸读会出现Failed to resolve module specifier "three"、duration=0，且可能退回竖屏默认尺寸。generated hyperframes-export是独立渲染入口，不应手工改它或把私人照片打包提交。
+
+也可以直接执行本地编码脚本，不经过npm脚本：
+~~~powershell
+node scripts/render-cli.mjs --resolution 1440p --output renders/final.mp4
+~~~
+
+以下为可选的原有npm命令方式：
 网页没有导出按钮。Windows 需安装 Chrome 或 Edge，以及 PATH 中的 FFmpeg：
 ~~~powershell
 winget install Gyan.FFmpeg
@@ -76,3 +91,6 @@ npm run render -- --resolution 1080p
 注意：旧版保存项目中已缩小、压缩的照片无法恢复原始细节，请重新从原照片导入，或把原图直接放进assets/photos。低分辨率、失焦或已模糊的原片无法仅靠提高输出分辨率变清晰。本项目不会擅自锐化或生成脸部细节。
 
 本次质量测试检查2560×1440真实绘图缓冲区、3072×3441纸页纹理和上传照片字节完全一致，不自动输出整段MP4。
+## 照片色彩保真
+照片是已经调好色的sRGB成片，现单独绕过暖色光照与ACES色调映射，平放时保留原图颜色；翻页时只叠加轻微的真实遮挡阴影。纸张和封面继续使用立体光照。不会额外磨皮、去噪或模糊照片。
+scripts/test-color.mjs用蓝灰、暖色和近白色测试图检查源RGB与相册像素，并捕获WebGL着色器错误。此测试区分了真实像素细节与光照造成的发灰问题。

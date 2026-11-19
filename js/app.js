@@ -1,11 +1,12 @@
 import {createAlbum} from './album.js';
 import {defaults,duration,TURN,INTRO,spreadCount,turnStart,position} from './config.js';
-const $=id=>document.getElementById(id),film=new URLSearchParams(location.search).has('render');
+const $=id=>document.getElementById(id),film=new URLSearchParams(location.search).has('render')||document.documentElement.dataset.export==='true';
 if(film)document.body.classList.add('film');
 let config=structuredClone(defaults),album,time=0,playing=!film,last=0,busy=false,manual=null;
 const audio=new Audio();audio.loop=true;audio.volume=.45;
 const status=s=>$('status').textContent=s;
-function validate(c){if(c.version!==2||!Array.isArray(c.photos)||!c.photos.length||c.photos.some(p=>typeof p!=='string'||! /^(data:image\/|\/?assets\/)/.test(p)))throw Error('至少需要一张照片，请添加到 assets/photos 后刷新');for(const key of ['names','title','story','date'])if(typeof c[key]!=='string'||c[key].length>300)throw Error('项目文案无效');if(!Number.isFinite(c.hold)||c.hold<1||c.hold>20)throw Error('停留时间需在 1–20 秒之间');if(c.music&&! /^(data:audio\/|assets\/)/.test(c.music))throw Error('音乐格式无效');return c;}
+function isPhotoSource(p){if(/^(data:image\/|\/?assets\/)/.test(p))return true;try{const u=new URL(p,location.href);return u.origin===location.origin&&u.pathname.includes('/assets/');}catch{return false;}}
+function validate(c){if(c.version!==2||!Array.isArray(c.photos)||!c.photos.length||c.photos.some(p=>typeof p!=='string'||!isPhotoSource(p)))throw Error('至少需要一张照片，请添加到 assets/photos 后刷新');for(const key of ['names','title','story','date'])if(typeof c[key]!=='string'||c[key].length>300)throw Error('项目文案无效');if(!Number.isFinite(c.hold)||c.hold<1||c.hold>20)throw Error('停留时间需在 1–20 秒之间');if(c.music&&! /^(data:audio\/|assets\/)/.test(c.music))throw Error('音乐格式无效');return c;}
 async function load(c){if(busy)return;busy=true;try{validate(c);const next=await createAlbum($('stage'),c);album?.dispose();album=next;config=structuredClone(c);time=0;audio.pause();audio.src=c.music||'';$('loading')?.remove();$('seek').max=duration(c);$('date-label').textContent=c.date;sync();}finally{busy=false,manual=null;}}
 function sync(){if(!album)return;album.seek(time);$('seek').value=time;$('play').textContent=playing?'Ⅱ 暂停':'▶ 继续';const p=position(config,time);$('counter').textContent=p.label;$('film-counter').textContent=p.label;$('film-progress').value=time/duration(config);$('prev').disabled=time<=0;$('next').disabled=p.spread===p.total; }
 function stop(){manual=null;playing=false;audio.pause();sync();}
@@ -31,8 +32,13 @@ $('save').onclick=async()=>{try{download(JSON.stringify(await collect()),'weddin
 $('import').onclick=()=>$('project-file').click();$('project-file').onchange=async e=>{try{await load(JSON.parse(await e.target.files[0].text()));$('editor').close();}catch(err){alert(err.message);}};
 $('reset').onclick=async()=>{await load(defaults);$('editor').close();};
 window.albumAPI={load,seek(t){time=Math.max(0,Math.min(duration(config),t));stop();},get config(){return config;},get duration(){return duration(config);},get position(){return position(config,time);},get quality(){return album?.quality;}};
-window.addEventListener('hf-seek',e=>window.albumAPI.seek(e.detail.time));
+window.addEventListener('hf-seek',e=>{const work=window.ready.then(()=>window.albumAPI.seek(e.detail.time));e.detail.waitUntil?.(work);});
 window.ready=load(defaults).then(()=>{last=0;});
+if(document.documentElement.dataset.export==='true'){
+ window.__hf=window.__hf||{};window.__hf.buildReady=window.__hf.buildReady||{};
+ window.__hf.buildReady.album=window.ready;
+ window.ready.then(()=>window.__albumBuildResolve?.(),e=>window.__albumBuildReject?.(e));
+}
 function frame(now){if(manual){const p=Math.min(1,(now-manual.start)/1800);time=manual.from+(manual.to-manual.from)*p;if(p===1)manual=null;sync();}if(playing&&album){time=Math.min(duration(config),time+(last?(now-last)/1000:0));if(time>=duration(config)){playing=false;audio.pause();}sync();}last=now;requestAnimationFrame(frame);}if(!film)requestAnimationFrame(frame);
 window.ready.catch(e=>{$('loading').textContent='加载失败：'+e.message;});
 let controlsTimer;document.addEventListener('pointermove',()=>{document.body.classList.add('controls-visible');clearTimeout(controlsTimer);controlsTimer=setTimeout(()=>document.body.classList.remove('controls-visible'),2000);});

@@ -3,7 +3,7 @@ import {TURN,INTRO,sheetCount,spreadCount,turnStart} from './config.js';
 const W=2.5,H=2.8;
 export async function createAlbum(host, config) {
  const renderer=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
- renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1;renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;
+ renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1;renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;
  host.append(renderer.domElement);
  const scene=new T.Scene(),camera=new T.PerspectiveCamera(33,1,.1,100);
  camera.position.set(0,5.3,6.4);camera.lookAt(0,0,0);
@@ -34,10 +34,29 @@ export async function createAlbum(host, config) {
   const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=renderer.capabilities.getMaxAnisotropy();return t;
  }
  const textures=new Map(),sheets=[],count=sheetCount(config);
+ // Photographs are already graded sRGB artwork. Keep their pixel values out
+ // of the scene's warm lighting and ACES curve; retain real, subtle shadows.
+ function pageMaterial(face,side){
+  const material=new T.MeshStandardMaterial({roughness:.87,side});
+  const inset=face%3===0;
+  const rect=face===0?[.17,1-890/1320,.83,1-200/1320]:face===1||face>config.photos.length+1?[0,0,0,0]:inset?[.11,1-1070/1320,.89,1-200/1320]:[.045,1-1185/1320,.955,1-55/1320];
+  material.onBeforeCompile=shader=>{
+   shader.uniforms.photoBounds={value:new T.Vector4(...rect)};
+   shader.fragmentShader='uniform vec4 photoBounds;\n'+shader.fragmentShader;
+   shader.fragmentShader=shader.fragmentShader.replace('#include <shadowmap_pars_fragment>','#include <shadowmap_pars_fragment>\n#include <shadowmask_pars_fragment>');
+   shader.fragmentShader=shader.fragmentShader.replace('#include <tonemapping_fragment>',`#include <tonemapping_fragment>
+    #ifdef USE_MAP
+     float photoArea=step(photoBounds.x,vMapUv.x)*step(vMapUv.x,photoBounds.z)*step(photoBounds.y,vMapUv.y)*step(vMapUv.y,photoBounds.w);
+     gl_FragColor.rgb=mix(gl_FragColor.rgb,diffuseColor.rgb*(0.9+0.1*getShadowMask()),photoArea);
+    #endif`);
+  };
+  material.customProgramCacheKey=()=> 'original-photo-srgb-v1';
+  return material;
+ }
  for(let i=0;i<count;i++){
   const geo=new T.PlaneGeometry(W,H,48,8);geo.translate(W/2,0,0);
-  const front=new T.MeshStandardMaterial({roughness:.87,side:T.FrontSide});
-  const back=new T.MeshStandardMaterial({roughness:.87,side:T.BackSide});
+  const front=pageMaterial(i*2,T.FrontSide);
+  const back=pageMaterial(i*2+1,T.BackSide);
   // Back UVs must read normally after the sheet has turned.
   const bg=geo.clone();const uv=bg.attributes.uv;for(let n=0;n<uv.count;n++)uv.setX(n,1-uv.getX(n));
   const a=new T.Mesh(geo,front),b=new T.Mesh(bg,back);a.castShadow=a.receiveShadow=b.castShadow=b.receiveShadow=true;book.add(a,b);sheets.push({a,b,progress:-1});
