@@ -49,6 +49,8 @@ cd WeddingAlbum3D
 npm install
 ~~~
 
+npm install 会安装 page-flip、GSAP 和 Vite，并通过 postinstall 将 GSAP 浏览器文件复制到 vendor/gsap.min.js，供独立的 HyperFrames composition 使用。
+
 以后更新代码，不要重复 clone，只需要：
 
 ~~~powershell
@@ -81,7 +83,7 @@ http://127.0.0.1:5173
 
 停止网页服务：在运行 npm run dev 的 PowerShell 窗口按 Ctrl + C。
 
-## 4. 先预览视频合成时间轴
+## 4. 预览视频合成时间轴
 
 视频使用独立的 export.html，不是通过录屏网页交互得到的。
 

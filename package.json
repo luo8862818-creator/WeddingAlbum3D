@@ -5,6 +5,7 @@
   "type": "module",
   "description": "A 3D wedding photo album with automatic page turning and HyperFrames video export.",
   "scripts": {
+    "postinstall": "node scripts/copy-gsap.mjs",
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",

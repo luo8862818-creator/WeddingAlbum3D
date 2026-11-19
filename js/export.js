@@ -63,6 +63,9 @@
     ease: "power2.out"
   }, 30.15);
 
+  // Keep the closing spread on screen through the full 34.5-second composition.
+  timeline.to({}, { duration: 3.25 }, 31.25);
+
   window.__timelines = window.__timelines || {};
   window.__timelines["wedding-album-export"] = timeline;
 

@@ -25,7 +25,7 @@ export function setupControls(pageFlip, autoplay, config) {
     progressFill.style.width = Math.max(0, Math.min(100, ratio * 100)) + "%";
     prevBtn.disabled = current <= 0;
     nextBtn.disabled = current >= pageCount - 1;
-    playBtn.disabled = current >= pageCount - 1 && !autoplay.isPlaying();
+    playBtn.disabled = false;
     if (autoplay.isPlaying()) {
       playIcon.textContent = "Ⅱ";
       playLabel.textContent = "暂停自动播放";

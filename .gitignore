@@ -3,6 +3,7 @@ dist/
 .vite/
 .hyperframes/
 .cache/
+vendor/gsap.min.js
 *.log
 .DS_Store
 Thumbs.db
