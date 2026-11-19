@@ -17,7 +17,10 @@ export async function createAlbum(host, config) {
  for(let i=0;i<14;i++) {leftStack.push(box(2.48,.004,2.78,i%2?0xe7deca:0xc7bea9,-1.25,-.025+i*.004,0));box(2.48,.004,2.78,i%2?0xe7deca:0xc7bea9,1.25,-.025+i*.004,0);}
  const images=await Promise.all(config.photos.map(src=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('照片无法加载：'+src.slice(0,100)));im.src=src;})));
  function texture(index) {
-  const c=document.createElement('canvas');c.width=2000;c.height=2240;const g=c.getContext('2d');g.scale(2,2240/1320);
+  const c=document.createElement('canvas');
+  const target=host.clientWidth<700?2048:3072;
+  c.width=Math.min(target,Math.floor(renderer.capabilities.maxTextureSize/1.12));c.height=Math.round(c.width*1.12);
+  const g=c.getContext('2d');g.scale(c.width/1000,c.height/1320);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
   g.fillStyle=index===0?'#52624f':'#f2eddf';g.fillRect(0,0,1000,1320);
   // Deterministic subtle cotton / linen grain.
   for(let i=0;i<18000;i++){const x=(i*73)%1000,y=(i*137)%1320;g.fillStyle=i%2?'#ffffff09':'#171e1408';g.fillRect(x,y,1+(i%3),1);}
@@ -66,5 +69,5 @@ export async function createAlbum(host, config) {
   renderer.render(scene,camera);
  }
  seek(0);
- return {seek,renderer,dispose(){observer.disconnect();scene.traverse(o=>{o.geometry?.dispose();if(o.material){for(const m of [].concat(o.material))m.dispose();}});textures.forEach(t=>t.dispose());renderer.dispose();renderer.domElement.remove();}};
+ return {seek,renderer,get quality(){return {canvas:{width:renderer.domElement.width,height:renderer.domElement.height},textures:[...textures.values()].map(t=>({width:t.image.width,height:t.image.height})),sources:images.map(im=>({width:im.naturalWidth,height:im.naturalHeight}))};},dispose(){observer.disconnect();scene.traverse(o=>{o.geometry?.dispose();if(o.material){for(const m of [].concat(o.material))m.dispose();}});textures.forEach(t=>t.dispose());renderer.dispose();renderer.domElement.remove();}};
 }

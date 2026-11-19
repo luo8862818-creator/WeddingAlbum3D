@@ -24,7 +24,7 @@ assets/photos/
 
 网页页码和视频进度显示例如“第 2 / 4 跨页 · 照片 2–3 / 7 张”。翻页完成后更新到新跨页；进度条连续变化。封面时显示“封面 · 0 / 7 张”。
 
-请使用清晰原图，建议长边至少 2400px。纸页纹理为 2000×2240，网页上传保留照片最长边至 3200px。照片采用居中裁切，保证比例不被拉伸。默认示例图只有约1200px，正式使用时请换成你自己的高清婚纱照。
+请使用清晰原图，建议长边至少 2400px。桌面纸页纹理提升为 3072×3441（移动端2048×2294，并受显卡纹理上限约束），缩放使用高质量采样。网页上传保留原始照片字节、原始尺寸，不再二次JPEG压缩；大图会占用更多内存，保存项目也会更大。照片采用居中裁切，保证比例不被拉伸。默认示例图只有约1200px，正式使用时请换成你自己的高清婚纱照。
 
 开发模式刷新会重新扫描文件夹；静态部署更新照片后需要重新 npm run build 并替换 dist。支持任意数量，没有三张限制；实际可用数量取决于本机内存。纹理仅缓存邻近纸页，离开后释放，避免每张照片常驻高分辨率 GPU 纹理。
 
@@ -41,7 +41,7 @@ assets/photos/
 winget install Gyan.FFmpeg
 npm run render
 ~~~
-不需要先启动网页。默认自动读取 assets/photos 和 js/config.js 的文案、音乐。输出 renders/wedding-album.mp4，1920×1080、30FPS、H.264/yuv420p，可选 AAC 音轨。
+不需要先启动网页。默认自动读取 assets/photos 和 js/config.js 的文案、音乐。输出 renders/wedding-album.mp4，默认 2K（2560×1440）、30FPS、H.264/yuv420p、CRF16，可选 AAC 音轨。
 
 网页编辑后的内容需要先保存项目，再运行：
 ~~~powershell
@@ -58,8 +58,21 @@ Chrome 安装在非默认位置时设置 CHROME_PATH，FFmpeg 可设置 FFMPEG_P
 npm run build
 npm test
 node scripts/test-dynamic.mjs
+node scripts/test-quality.mjs
 npm run preview
 ~~~
 构建产物在 dist。测试涵盖网页交互、照片添加/删除、文件夹自动扫描、2秒封面打开、动态页码以及影片模式界面。截图与机器检查结果在 renders，说明见 docs/TEST_RESULTS.md。当前按用户要求不执行视频编码验收。
 
 技术：Three.js 网格弯曲、真实阴影与纸堆厚度；Vite 本地服务与打包；Playwright 固定时间渲染；FFmpeg 编码。纸张为解析弯曲模拟，滑动触发完整翻页，不提供跟手卷角。示例照片来源见 assets/photos/SOURCES.md。
+## 2K 清晰度与导出
+网页仍用 npm run dev 启动。终端导出默认已切换到 2560×1440（常称2K/QHD）：
+~~~powershell
+npm run render
+npm run render -- --resolution 1440p --project wedding-project.json
+npm run render -- --resolution 1080p
+~~~
+逐帧使用无损PNG送入FFmpeg，取消中间JPEG压缩；最终H.264使用slow预设、CRF16。更高分辨率与画质会增加文件大小和渲染时间。视频帧率仍为30FPS。
+
+注意：旧版保存项目中已缩小、压缩的照片无法恢复原始细节，请重新从原照片导入，或把原图直接放进assets/photos。低分辨率、失焦或已模糊的原片无法仅靠提高输出分辨率变清晰。本项目不会擅自锐化或生成脸部细节。
+
+本次质量测试检查2560×1440真实绘图缓冲区、3072×3441纸页纹理和上传照片字节完全一致，不自动输出整段MP4。

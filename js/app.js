@@ -23,14 +23,14 @@ function editor(){stop();fields.forEach(k=>$(k).value=config[k]);draftPhotos=[..
 $('edit').onclick=editor;
 const read=file=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});
 let uploading=Promise.resolve();
-$('photos').onchange=e=>{const files=[...e.target.files];uploading=uploading.then(async()=>{for(const file of files){const im=await createImageBitmap(file);const cv=document.createElement('canvas'),r=Math.min(1,3200/Math.max(im.width,im.height));cv.width=im.width*r;cv.height=im.height*r;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);draftPhotos.push(cv.toDataURL('image/jpeg',.92));im.close();}thumbnails();e.target.value='';});uploading.catch(err=>alert('照片读取失败：'+err.message));};
+$('photos').onchange=e=>{const files=[...e.target.files];uploading=uploading.catch(()=>{}).then(async()=>{for(const file of files){const im=await createImageBitmap(file);im.close();draftPhotos.push(await read(file));}thumbnails();e.target.value='';});uploading.catch(err=>alert('照片读取失败：'+err.message));};
 async function collect(){await uploading;const c=structuredClone(config);c.photos=[...draftPhotos];fields.forEach(k=>c[k]=k==='hold'?Number($(k).value):$(k).value);if($('audio-file').files[0])c.music=await read($('audio-file').files[0]);return validate(c);}
 $('apply').onclick=async()=>{try{await load(await collect());$('photos').value='';$('audio-file').value='';$('editor').close();status('已应用修改。请保存项目以供下次使用和命令行导出。');}catch(e){status(e.message);alert(e.message);}};
 function download(data,name,type){const u=URL.createObjectURL(new Blob([data],{type}));const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),30000);}
 $('save').onclick=async()=>{try{download(JSON.stringify(await collect()),'wedding-project.json','application/json');}catch(e){alert(e.message);}};
 $('import').onclick=()=>$('project-file').click();$('project-file').onchange=async e=>{try{await load(JSON.parse(await e.target.files[0].text()));$('editor').close();}catch(err){alert(err.message);}};
 $('reset').onclick=async()=>{await load(defaults);$('editor').close();};
-window.albumAPI={load,seek(t){time=Math.max(0,Math.min(duration(config),t));stop();},get config(){return config;},get duration(){return duration(config);},get position(){return position(config,time);}};
+window.albumAPI={load,seek(t){time=Math.max(0,Math.min(duration(config),t));stop();},get config(){return config;},get duration(){return duration(config);},get position(){return position(config,time);},get quality(){return album?.quality;}};
 window.addEventListener('hf-seek',e=>window.albumAPI.seek(e.detail.time));
 window.ready=load(defaults).then(()=>{last=0;});
 function frame(now){if(manual){const p=Math.min(1,(now-manual.start)/1800);time=manual.from+(manual.to-manual.from)*p;if(p===1)manual=null;sync();}if(playing&&album){time=Math.min(duration(config),time+(last?(now-last)/1000:0));if(time>=duration(config)){playing=false;audio.pause();}sync();}last=now;requestAnimationFrame(frame);}if(!film)requestAnimationFrame(frame);
