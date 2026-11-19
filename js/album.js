@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {TURN,INTRO,sheetCount,spreadCount,turnStart} from './config.js';
+import {INTRO,sheetCount,spreadCount,turnStart,turnDuration,closeStart,closeDuration,smooth} from './config.js';
 const W=2.5,H=2.8;
 export async function createAlbum(host, config) {
  const renderer=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
@@ -33,11 +33,12 @@ export async function createAlbum(host, config) {
   const shade=g.createLinearGradient(0,0,1000,0);shade.addColorStop(0,'#40341d25');shade.addColorStop(.05,'#40341d00');shade.addColorStop(.95,'#40341d00');shade.addColorStop(1,'#40341d12');g.fillStyle=shade;g.fillRect(0,0,1000,1320);
   const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=renderer.capabilities.getMaxAnisotropy();return t;
  }
- const textures=new Map(),sheets=[],count=sheetCount(config);
+ const textures=new Map(),sheets=[],count=sheetCount(config);const stats={textureBuilds:0,geometryUpdates:0,renders:0};
+ const fallback=new T.CanvasTexture(Object.assign(document.createElement('canvas'),{width:1,height:1}));fallback.colorSpace=T.SRGBColorSpace;
  // Photographs are already graded sRGB artwork. Keep their pixel values out
  // of the scene's warm lighting and ACES curve; retain real, subtle shadows.
  function pageMaterial(face,side){
-  const material=new T.MeshStandardMaterial({roughness:.87,side});
+  const material=new T.MeshStandardMaterial({map:fallback,roughness:.87,side});
   const inset=face%3===0;
   const rect=face===0?[.17,1-890/1320,.83,1-200/1320]:face===1||face>config.photos.length+1?[0,0,0,0]:inset?[.11,1-1070/1320,.89,1-200/1320]:[.045,1-1185/1320,.955,1-55/1320];
   material.onBeforeCompile=shader=>{
@@ -59,34 +60,60 @@ export async function createAlbum(host, config) {
   const back=pageMaterial(i*2+1,T.BackSide);
   // Back UVs must read normally after the sheet has turned.
   const bg=geo.clone();const uv=bg.attributes.uv;for(let n=0;n<uv.count;n++)uv.setX(n,1-uv.getX(n));
-  const a=new T.Mesh(geo,front),b=new T.Mesh(bg,back);a.castShadow=a.receiveShadow=b.castShadow=b.receiveShadow=true;book.add(a,b);sheets.push({a,b,progress:-1});
+  const a=new T.Mesh(geo,front),b=new T.Mesh(bg,back);a.castShadow=a.receiveShadow=b.castShadow=b.receiveShadow=true;book.add(a,b);sheets.push({a,b,progress:-1,closing:-1,columns:new Float32Array(49*4)});
  }
  const sizes=()=>{const {width,height}=host.getBoundingClientRect();renderer.setSize(width,height);camera.aspect=width/height;const tangent=Math.tan(T.MathUtils.degToRad(33/2));const distance=Math.max(2.94/(2*tangent),5.15/(2*tangent*camera.aspect))*1.035;camera.position.set(0,distance*.992,distance*.126);camera.lookAt(0,0,0);camera.updateProjectionMatrix();renderer.render(scene,camera);};
- let previous=-1;const observer=new ResizeObserver(sizes);observer.observe(host);sizes();
- function seek(time){if(time===previous)return;previous=time;
-  const opening=T.MathUtils.clamp((time-INTRO)/TURN,0,1);const open=opening*opening*(3-2*opening);book.position.x=-W/2*(1-open);leftStack.forEach(m=>m.visible=open>.98);
+ let previous=-1,lastVisual='',currentTime=0;
+ const rest=leftStack.map(m=>m.position.clone());
+ const observer=new ResizeObserver(sizes);observer.observe(host);sizes();
+ function seek(time){if(time===previous)return;previous=time;currentTime=time;
+  const open=smooth(T.MathUtils.clamp((time-INTRO)/turnDuration(config),0,1));
+  const close=smooth(T.MathUtils.clamp((time-closeStart(config))/closeDuration(config),0,1));
   let active=0;for(let i=0;i<spreadCount(config);i++)if(time>=turnStart(config,i)-(i?config.hold:0))active=i;
+  const readyToClose=time>=closeStart(config)-config.hold;
+  const progress=sheets.map((_,i)=>i===count-1?0:smooth(T.MathUtils.clamp((time-turnStart(config,i))/turnDuration(config),0,1)));
+  const key=[open,close,active,readyToClose,...progress].join(':');
+  if(key===lastVisual)return;lastVisual=key;
+  book.position.x=-W/2*(1-open+close);
+  const ca=Math.cos(-close*Math.PI),sa=Math.sin(-close*Math.PI),pivot=.14;
+  leftStack.forEach((m,i)=>{m.visible=open>.98&&close===0;m.position.set(ca*rest[i].x-sa*(rest[i].y-pivot),sa*rest[i].x+ca*(rest[i].y-pivot)+pivot,rest[i].z);m.rotation.z=-close*Math.PI;});
   const visible=new Set([Math.max(0,active-1),active,Math.min(count-1,active+1)]);
-  sheets.forEach((sheet,i)=>{const {a,b}=sheet;
+  if(readyToClose)visible.add(0);
+  sheets.forEach((sheet,i)=>{const {a,b,columns}=sheet;
    a.visible=b.visible=visible.has(i);
    if(!a.visible)return;
-   for(const [face,mesh] of [[i*2,a],[i*2+1,b]]){if(!textures.has(face))textures.set(face,texture(face));if(mesh.material.map!==textures.get(face)){mesh.material.map=textures.get(face);mesh.material.needsUpdate=true;}}
-   const raw=T.MathUtils.clamp((time-turnStart(config,i))/TURN,0,1),p=(i===count-1?0:raw*raw*(3-2*raw)),angle=p*Math.PI;
-   if(sheet.progress===p)return;sheet.progress=p;
+   for(const [face,mesh] of [[i*2,a],[i*2+1,b]]){
+    if(!textures.has(face)){const t=texture(face);textures.set(face,t);renderer.initTexture(t);stats.textureBuilds++;}
+    mesh.material.map=textures.get(face);
+   }
+   const p=progress[i],closing=p===1?close:0,angle=p*Math.PI;
+   if(sheet.progress===p&&sheet.closing===closing)return;
+   sheet.progress=p;sheet.closing=closing;stats.geometryUpdates++;
+   // Evaluate each strip column once; analytic tangents replace a full
+   // indexed-mesh normal recomputation for every frame and every face.
+   for(let col=0;col<49;col++){
+    const u=col/48,x=u*W,k=i===0?0:Math.sin(Math.PI*p)*.24;
+    const local=angle+k*u,bend=i===0?0:Math.sin(Math.PI*p)*.48*Math.sin(u*Math.PI);
+    let px=Math.cos(local)*x,py=.08+((1-p)*(count-i)+p*i)*Math.min(.009,.045/count)+Math.sin(local)*x+bend;
+    const dx=W*Math.cos(local)-x*Math.sin(local)*k;
+    const dy=W*Math.sin(local)+x*Math.cos(local)*k+(i===0?0:Math.sin(Math.PI*p)*.48*Math.PI*Math.cos(u*Math.PI));
+    const length=Math.hypot(dx,dy);let nx=-dy/length,ny=dx/length;
+    if(closing>0){const c=Math.cos(-closing*Math.PI),s=Math.sin(-closing*Math.PI),oldX=px,oldNx=nx;px=c*px-s*(py-pivot);py=s*oldX+c*(py-pivot)+pivot;nx=c*nx-s*ny;ny=s*oldNx+c*ny;}
+    columns.set([px,py,nx,ny],col*4);
+   }
    for(const mesh of [a,b]){
-    const pos=mesh.geometry.attributes.position;
-    for(let n=0;n<pos.count;n++){
-     const u=n%49/48, v=Math.floor(n/49)/8, x=u*W;
-     const bend=i===0?0:Math.sin(Math.PI*p)*.48*Math.sin(u*Math.PI);
-     const local=angle+(i===0?0:Math.sin(Math.PI*p)*.24*u);
-     pos.setXYZ(n,Math.cos(local)*x, .08+((1-p)*(count-i)+p*i)*Math.min(.009,.045/count)+Math.sin(local)*x+bend+(mesh===b?-.001:.001), (v-.5)*H);
-    }
-    pos.needsUpdate=true;mesh.geometry.computeVertexNormals();
+    const pos=mesh.geometry.attributes.position,normal=mesh.geometry.attributes.normal;
+    for(let n=0;n<pos.count;n++){const col=n%49,at=col*4,v=Math.floor(n/49)/8;const offset=mesh===b?-.001:.001;pos.setXYZ(n,columns[at],columns[at+1]+offset,(v-.5)*H);normal.setXYZ(n,columns[at+2],columns[at+3],0);}
+    pos.needsUpdate=normal.needsUpdate=true;
    }
   });
-  for(const [face,t] of textures)if(!visible.has(Math.floor(face/2))){const mesh=face%2?sheets[Math.floor(face/2)].b:sheets[Math.floor(face/2)].a;mesh.material.map=null;mesh.material.needsUpdate=true;t.dispose();textures.delete(face);}
-  renderer.render(scene,camera);
+  for(const [face,t] of textures)if(!visible.has(Math.floor(face/2))){
+   const mesh=face%2?sheets[Math.floor(face/2)].b:sheets[Math.floor(face/2)].a;mesh.material.map=fallback;t.dispose();textures.delete(face);
+  }
+  renderer.render(scene,camera);stats.renders++;
  }
  seek(0);
- return {seek,renderer,get quality(){return {canvas:{width:renderer.domElement.width,height:renderer.domElement.height},textures:[...textures.values()].map(t=>({width:t.image.width,height:t.image.height})),sources:images.map(im=>({width:im.naturalWidth,height:im.naturalHeight}))};},dispose(){observer.disconnect();scene.traverse(o=>{o.geometry?.dispose();if(o.material){for(const m of [].concat(o.material))m.dispose();}});textures.forEach(t=>t.dispose());renderer.dispose();renderer.domElement.remove();}};
+ // Both side programs and the first photographs are ready before autoplay.
+ await renderer.compileAsync(scene,camera);
+ return {seek,renderer,get quality(){return {stats:{...stats},state:{time:currentTime,closing:smooth(T.MathUtils.clamp((currentTime-closeStart(config))/closeDuration(config),0,1))},canvas:{width:renderer.domElement.width,height:renderer.domElement.height},textures:[...textures.values()].map(t=>({width:t.image.width,height:t.image.height})),sources:images.map(im=>({width:im.naturalWidth,height:im.naturalHeight}))};},dispose(){observer.disconnect();scene.traverse(o=>{o.geometry?.dispose();if(o.material){for(const m of [].concat(o.material))m.dispose();}});textures.forEach(t=>t.dispose());fallback.dispose();renderer.dispose();renderer.domElement.remove();}};
 }

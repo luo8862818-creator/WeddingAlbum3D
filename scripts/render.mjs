@@ -6,7 +6,7 @@ import {existsSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {renderOptions} from './render-options.mjs';
-export async function browser(){for(const p of [process.env.CHROME_PATH,'C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'])if(p&&existsSync(p))return chromium.launch({executablePath:p,headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});return chromium.launch({headless:true});}
+export async function browser({software=true}={}){for(const p of [process.env.CHROME_PATH,'C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'])if(p&&existsSync(p))return chromium.launch({executablePath:p,headless:true,args:software?['--use-angle=swiftshader','--enable-unsafe-swiftshader']:[]});return chromium.launch({headless:true});}
 export async function render({url,config,output='renders/wedding-album.mp4',seconds,resolution='1440p'}){
  const options=renderOptions({resolution,seconds});
  await mkdir(path.dirname(output),{recursive:true});const b=await browser();let ff,audioPath;

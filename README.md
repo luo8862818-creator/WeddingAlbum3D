@@ -8,7 +8,7 @@
 npm install
 npm run dev
 ~~~
-打开 http://127.0.0.1:5173 。控制栏支持暂停/继续、前后翻页、进度拖动；键盘方向键翻页、空格暂停，手机左右滑动翻页。每次加载完成后，先展示合上的封面两秒，再打开；翻页 1.8 秒。
+打开 http://127.0.0.1:5173 。控制栏支持暂停/继续、前后翻页、进度拖动；键盘方向键翻页、空格暂停，手机左右滑动翻页。每次加载完成后，先展示合上的封面两秒，再打开；翻页默认2.2秒，最后一跨页停留后合册，闭合后再停留2秒。
 
 ## 以后只维护这个照片文件夹
 ~~~text
@@ -33,7 +33,7 @@ assets/photos/
 
 点击“保存项目”下载 JSON，下一次通过“导入项目”恢复；刷新默认重新读取文件夹。通过网页上传的照片会内嵌在 JSON 中，文件夹照片保留文件引用，因此请连同原文件保留。
 
-背景音乐在编辑器选择本地音频文件，点击“♫ 音乐”播放；浏览器需要用户点击才能播放。也可在 js/config.js 的 music 设置 assets/music/your-song.mp3。视频会循环配乐、末尾淡出。音乐和照片请使用有授权的素材。
+背景音乐在编辑器选择本地音频文件，点击“♫ 音乐”播放；浏览器需要用户点击才能播放。也可在 album.config.json 的 music 设置 assets/music/your-song.mp3。视频会循环配乐、末尾淡出。音乐和照片请使用有授权的素材。
 
 ## 终端导出 MP4（HyperFrames 推荐入口）
 如果你使用 HyperFrames，请在仓库目录运行以下两条命令；无需 npm run dev，也无需 npm run render：
@@ -56,7 +56,7 @@ node scripts/render-cli.mjs --resolution 1440p --output renders/final.mp4
 winget install Gyan.FFmpeg
 npm run render
 ~~~
-不需要先启动网页。默认自动读取 assets/photos 和 js/config.js 的文案、音乐。输出 renders/wedding-album.mp4，默认 2K（2560×1440）、30FPS、H.264/yuv420p、CRF16，可选 AAC 音轨。
+不需要先启动网页。默认自动读取 assets/photos 和 album.config.json 的文案、音乐。输出 renders/wedding-album.mp4，默认 2K（2560×1440）、30FPS、H.264/yuv420p、CRF16，可选 AAC 音轨。
 
 网页编辑后的内容需要先保存项目，再运行：
 ~~~powershell
@@ -64,7 +64,7 @@ npm run render -- --project C:\Users\yourname\Downloads\wedding-project.json --o
 ~~~
 完整影片只显示相册、动态页码及进度条；不显示定制按钮、暂停继续、音乐按钮、状态文案和网页控制栏。可打开 http://127.0.0.1:5173/?render=1 检查视频画面（此模式默认暂停，供时间寻址）。
 
-影片时长自动计算：2秒封面停留 + 跨页数 ×（1.8秒翻页 + 自定义停留秒数）。跨页数 = ceil((照片数+1)/2)。每一帧设置时间为 n/30 后绘制，再交给 FFmpeg 编码；不是实时屏幕录制，渲染耗时不改变输出帧率。软件 WebGL 可能较慢，终端每60帧报告进度。
+影片时长自动计算：2秒封面停留 + 跨页数 ×（turnDuration + hold）+ closeDuration + endHold。跨页数 = ceil((照片数+1)/2)。每一帧设置时间为 n/30 后绘制，再交给 FFmpeg 编码；不是实时屏幕录制，渲染耗时不改变输出帧率。软件 WebGL 可能较慢，终端每60帧报告进度。
 
 Chrome 安装在非默认位置时设置 CHROME_PATH，FFmpeg 可设置 FFMPEG_PATH。其他系统先运行 npx playwright install chromium。渲染期间不要修改源文件或照片文件夹。
 
@@ -94,3 +94,25 @@ npm run render -- --resolution 1080p
 ## 照片色彩保真
 照片是已经调好色的sRGB成片，现单独绕过暖色光照与ACES色调映射，平放时保留原图颜色；翻页时只叠加轻微的真实遮挡阴影。纸张和封面继续使用立体光照。不会额外磨皮、去噪或模糊照片。
 scripts/test-color.mjs用蓝灰、暖色和近白色测试图检查源RGB与相册像素，并捕获WebGL着色器错误。此测试区分了真实像素细节与光照造成的发灰问题。
+## 姓名、日期和动画配置
+以后直接修改仓库根目录 album.config.json，无需进入动画代码：
+~~~json
+{
+  "names": "新郎姓名 & 新娘姓名",
+  "date": "2026. 10. 18",
+  "title": "The art of us.",
+  "story": "第一行纪念文案。\n第二行纪念文案。",
+  "music": "",
+  "hold": 3.5,
+  "turnDuration": 2.2,
+  "closeDuration": 2.4,
+  "endHold": 2
+}
+~~~
+names为新人姓名，date为日期，title为封面标题，story为纪念文案，music为本地音乐路径（例如assets/music/song.mp3）。时间单位全部为秒：hold是每个跨页的停留时间，turnDuration是每次翻页时长，closeDuration是结束合册时长，endHold是合册后的停留时间。
+
+修改后保存并刷新网页；HyperFrames导出前重新执行node scripts/prepare-hyperframes.mjs。JSON必须使用英文双引号，不加注释，最后一项后面不加逗号。网页编辑或旧项目导入的值会覆盖本次预览配置，刷新可恢复文件中的默认配置。
+
+动画采用起止速度、加速度均连续的五次缓动；纹理提前上传，材质启动预编译，法线按列解析计算，静止阶段复用画面。最后合册后显示“已合册 · 总数/总数”，并保持在闭合状态。可通过上一页反向打开，也可点击继续播放重新开始。
+
+专项检查：node scripts/test-closing.mjs。测试合册状态、正反时间寻址、翻页/合册中不创建新纹理、停留时不重复绘制。检查中CPU seek耗时不等于GPU完成或屏幕实际帧率。

@@ -1,10 +1,10 @@
 import {readdir} from 'node:fs/promises';
 const samplePhoto='assets/photos/'+(await readdir('assets/photos')).filter(n=>/\.(jpe?g|png|webp|avif)$/i.test(n)).sort()[0];
 import {createHash} from 'node:crypto';import {createServer} from 'vite';import {browser} from './render.mjs';import assert from 'node:assert/strict';import {mkdir,writeFile} from 'node:fs/promises';
-const server=await createServer({server:{port:0,strictPort:false,hmr:false}});await server.listen();const b=await browser();const results=[];
+const server=await createServer({server:{port:0,strictPort:false,hmr:false}});await server.listen();const b=await browser({software:false});const results=[];
 try{const page=await b.newPage({viewport:{width:1920,height:1080}});const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(server.resolvedUrls.local[0]);await page.evaluate(()=>window.ready);await page.evaluate(()=>window.albumAPI.seek(0));await mkdir('renders',{recursive:true});await page.screenshot({path:'renders/cover.png'});
 for(const t of [5.3,9,10.6,15.9,23]){await page.evaluate(t=>window.albumAPI.seek(t),t);await page.screenshot({path:'renders/page-'+t+'.png'});}
-await page.evaluate(()=>window.albumAPI.seek(0));await page.click('#next');await page.waitForTimeout(2000);assert(Number(await page.inputValue('#seek'))>0);results.push('手动翻页');
+await page.evaluate(()=>window.albumAPI.seek(0));await page.click('#next');await page.waitForTimeout(2600);assert(Number(await page.inputValue('#seek'))>0);results.push('手动翻页');
 await page.click('#play');assert.match(await page.textContent('#play'),/暂停/);await page.click('#play');results.push('播放/暂停');
 await page.click('#edit');await page.fill('#names','测试新人');await page.fill('#story','测试文案');await page.click('#apply');await page.waitForFunction(()=>!document.getElementById('editor').open);assert.equal(await page.evaluate(()=>window.albumAPI.config.names),'测试新人');results.push('自定义姓名文案');
 await page.click('#edit');await page.setInputFiles('#photos',samplePhoto);await page.click('#apply');await page.waitForFunction(()=>!document.getElementById('editor').open);assert.match(await page.evaluate(()=>window.albumAPI.config.photos.at(-1)),/^data:image/);results.push('本地替换照片');

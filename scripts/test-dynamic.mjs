@@ -24,7 +24,7 @@ try{
   await page.evaluate(async({base,n})=>{await window.albumAPI.load({...base,photos:Array.from({length:n},(_,i)=>base.photos[i%base.photos.length])});window.albumAPI.seek(window.albumAPI.duration);},{base,n});
   const p=await page.evaluate(()=>({pos:window.albumAPI.position,duration:window.albumAPI.duration}));
   assert.equal(p.pos.total,Math.ceil((n+1)/2));assert.equal(p.pos.last,n);assert.equal(p.pos.spread,p.pos.total);
-  assert.equal(p.duration,2+Math.ceil((n+1)/2)*(1.8+base.hold));assert.equal(await page.locator('#film-progress').getAttribute('max'),'1');
+  assert.equal(p.duration,2+Math.ceil((n+1)/2)*((base.turnDuration??2.2)+base.hold)+(base.closeDuration??2.4)+(base.endHold??2));assert.equal(await page.locator('#film-progress').getAttribute('max'),'1');
  }
  await page.screenshot({path:'renders/film-progress-1080.png'});
  results.push('1/2/7张照片动态页数、总数、时长及最终页码正确');
